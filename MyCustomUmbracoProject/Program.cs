@@ -1,15 +1,37 @@
-WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
+using MyCustomUmbracoProject.Interfaces;
+using MyCustomUmbracoProject.Services;
+using Umbraco.Cms.Core.;
 
-builder.CreateUmbracoBuilder()
+var builder = WebApplication.CreateBuilder(args);
+
+// Configure services
+builder.Services.AddUmbraco(builder.Environment, builder.Configuration)
     .AddBackOffice()
     .AddWebsite()
     .AddDeliveryApi()
     .AddComposers()
     .Build();
 
-WebApplication app = builder.Build();
+// Add SpaStaticFiles service to serve Vite build files
+builder.Services.AddSpaStaticFiles(configuration =>
+{
+    configuration.RootPath = "ClientApp\\dist\\umbraco-app";
+});
+
+builder.Services.AddScoped<IContentService, ContentService>();
+
+var app = builder.Build();
+
+// Configure the middleware pipeline
+if (app.Environment.IsDevelopment())
+{
+    app.UseDeveloperExceptionPage();
+}
+
+app.UseRouting();
 
 await app.BootUmbracoAsync();
+
 
 app.UseUmbraco()
     .WithMiddleware(u =>
@@ -23,6 +45,42 @@ app.UseUmbraco()
         u.UseBackOfficeEndpoints();
         u.UseWebsiteEndpoints();
     });
+// Serve the Vite files
+app.UseSpaStaticFiles();
+
+
+// Set up default file handling for SPA
+app.UseSpaStaticFiles(new StaticFileOptions
+{
+    FileProvider = new Microsoft.Extensions.FileProviders.PhysicalFileProvider(
+        Path.Combine(app.Environment.ContentRootPath, "ClientApp\\dist\\umbraco-app")),
+    RequestPath = "",
+    OnPrepareResponse = ctx =>
+    {
+        // Set cache control header to allow caching of static files
+        ctx.Context.Response.Headers.Append("Cache-Control", "public,max-age=31536000,immutable");
+    }
+});
+
+app.UseEndpoints(endpoints =>
+{
+    endpoints.MapControllers();
+
+    // Handle fallback route for SPA
+    endpoints.MapFallbackToFile("index.html");
+});
+
+// SPA configuration for development
+app.UseSpa(spa =>
+{
+    spa.Options.SourcePath = "ClientApp";
+    if(app.Environment.IsDevelopment())
+    {
+        spa.UseProxyToSpaDevelopmentServer("http://localhost:5173");// Assuming Vite dev server runs on this port
+    }
+});
+
+
 
 await app.RunAsync();
 

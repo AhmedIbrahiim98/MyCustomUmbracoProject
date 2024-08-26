@@ -14,7 +14,8 @@ export default defineConfig(({ command, mode}) => ({
     extensions: ['.js', '.jsx', '.tsx', '.ts']
   },
   server: {
-    port: 3000
+    port: 5173,
+    strictPort: true
   },
 
   build: {

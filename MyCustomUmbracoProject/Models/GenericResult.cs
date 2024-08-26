@@ -7,5 +7,9 @@
         public string Message { get; set; } = null;
         public string Error { get; set; } = null;
         public IEnumerable<string> ErrorMessages { get; set; } = Enumerable.Empty<string>();
+
+        public GenericResult() { }
+
+        // public record GenericResult<T>(T Data, bool Success = true, string? Message = null, string? Error = null, List<string>? ErrorMessages = null);
     }
 }

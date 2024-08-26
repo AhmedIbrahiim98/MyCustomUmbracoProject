@@ -1,6 +1,5 @@
 using MyCustomUmbracoProject.Interfaces;
 using MyCustomUmbracoProject.Services;
-using Umbraco.Cms.Core.;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -20,12 +19,21 @@ builder.Services.AddSpaStaticFiles(configuration =>
 
 builder.Services.AddScoped<IContentService, ContentService>();
 
+builder.Services.AddEndpointsApiExplorer();// Registers the endpoints for API Explorer
+builder.Services.AddSwaggerGen();// Registers the Swagger generator
+
 var app = builder.Build();
 
 // Configure the middleware pipeline
 if (app.Environment.IsDevelopment())
 {
     app.UseDeveloperExceptionPage();
+    app.UseSwagger();
+    app.UseSwaggerUI(c =>
+    {
+        c.SwaggerEndpoint("localhost:44320/swagger/v1/swagger.json", "My API V1");
+        c.RoutePrefix = string.Empty;
+    });
 }
 
 app.UseRouting();
